@@ -132,4 +132,3 @@ dmypy.json
 .idea/
 cached_ninja_data/
 cached_images/
-firebaseKey.json
