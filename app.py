@@ -19,9 +19,10 @@ import os
 
 # To get a string like this run:
 # openssl rand -hex 32
+# EXAMPLE KEY, NOT USED IN PROD!
 SECRET_KEY = "ddb4817c2d6c50b9b09c757d8fe018291a70ed41174d29358a89a10dd0a9f012"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 120
 
 
 # Init Firestore
@@ -44,13 +45,21 @@ class TokenData(BaseModel):
 
 class User(BaseModel):
     username: str
-    accountname: Optional[str] = None
-    poesessid: Optional[str] = None
+    friends: Optional[list] = None
+    latest_snapshot_ref: Optional[str] = None
     disabled: Optional[bool] = None
 
 
 class UserInDB(User):
     hashed_password: str
+    accountname: str
+    poesessid: str
+
+
+class Snapshot(BaseModel):
+    username: str
+    value: int
+    date: datetime
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -83,14 +92,36 @@ def get_firebase_user(db, username: str):
 
     user = user_ref.get()
     if user.exists:
+        # print(user.to_dict())
         return UserInDB(**user.to_dict())
+
+
+def get_snapshot(db, document_reference: str):
+    snapshot_ref = db.collection('snapshots').document(document_reference)
+
+    snapshot = snapshot_ref.get()
+    if snapshot.exists:
+        return Snapshot(**snapshot.to_dict())
 
 
 def create_firebase_user(db, user: UserInDB):
     users_ref = db.collection('users')
 
     users_ref.document(user.username.lower()).set({'username': user.username, 'accountname': user.accountname,
-                                           'poesessid': user.poesessid, 'hashed_password': user.hashed_password, 'disabled': user.disabled})
+                                                   'poesessid': user.poesessid, 'hashed_password': user.hashed_password, 'disabled': user.disabled})
+
+
+def create_snapshot(db, snapshot: Snapshot):
+    snapshots_ref = db.collection('snapshots')
+    users_ref = db.collection('users')
+
+    # Add snapshot to snapshots collection
+    snapshot_ref = snapshots_ref.document()
+    snapshot_ref.set(snapshot.dict())
+
+    # Update latest_snapshot_ref for the user
+    users_ref.document(snapshot.username.lower()).update(
+        {'latest_snapshot_ref': snapshot_ref.id})
 
 
 def authenticate_user(db, username: str, password: str):
@@ -183,14 +214,16 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@ app.get("/users/me/", response_model=User)
-async def read_users_me(current_user: User = Depends(get_current_active_user)):
+# TODO: Should not return field hashed_password?
+@ app.get("/users/me/", response_model=UserInDB)
+async def read_users_me(current_user: UserInDB = Depends(get_current_active_user)):
+    current_user.hashed_password = 'SECRET'
     return current_user
 
 
 @ app.get("/")
 async def index():
-    return HTMLResponse(content='<h3>coolest poe api, /docs for testing</h3>')
+    return HTMLResponse(content='<h3>coolest poe api, <a href="/docs">/docs</a> for testing</h3>')
 
 
 # TODO: Split this application up into multiple files in a nice way.
@@ -364,3 +397,37 @@ async def get_icon(path: str = 'https://web.poecdn.com/image/Art/2DItems/Currenc
         image = get(path).content
         write_to_file(full_path, image, isImage=True)
         return Response(content=image, media_type='image/png')
+
+
+@ app.get("/snapshot/latest", response_model=Snapshot)
+async def get_latest_snapshot(username: str):
+    user = get_firebase_user(firebase_db, username)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Could not find that user"
+        )
+
+    latest_snapshot = get_snapshot(firebase_db, user.latest_snapshot_ref)
+    if not latest_snapshot:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This user does not have any snapshots"
+        )
+
+    return latest_snapshot
+
+
+@ app.post("/snapshot/add", response_model=Snapshot)
+async def add_snapshot(username: str = Form(...), value: int = Form(...)):
+    user = get_firebase_user(firebase_db, username)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Could not find that user"
+        )
+
+    snapshot = Snapshot(username=username, value=value, date=datetime.now())
+    create_snapshot(firebase_db, snapshot)
+
+    return snapshot
