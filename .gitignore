@@ -130,3 +130,5 @@ dmypy.json
 
 # Misc
 .idea/
+cached_ninja_data/
+cached_images/
