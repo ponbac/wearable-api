@@ -124,6 +124,11 @@ def create_snapshot(db, snapshot: Snapshot):
         {'latest_snapshot_ref': snapshot_ref.id})
 
 
+def add_friend(db, friend_to_add: str, current_user: User):
+    current_user_ref = db.collection('users').document(current_user.username.lower())
+    current_user_ref.update({u'friends': firestore.ArrayUnion([friend_to_add])})
+
+
 def authenticate_user(db, username: str, password: str):
     user = get_firebase_user(db, username)
     if not user:
@@ -234,7 +239,7 @@ NINJA_CURRENCY_URL = 'https://poe.ninja/api/data/currencyoverview'
 NINJA_ITEM_URL = 'https://poe.ninja/api/data/itemoverview'
 POE_STASH_URL = 'https://www.pathofexile.com/character-window/get-stash-items'
 
-TIME_UNTIL_DATA_IS_OLD = 15  # minutes
+TIME_UNTIL_DATA_IS_OLD = 30  # minutes
 
 last_updated_dict = {
     'Currency': None,
@@ -431,3 +436,23 @@ async def add_snapshot(username: str = Form(...), value: int = Form(...)):
     create_snapshot(firebase_db, snapshot)
 
     return snapshot
+
+
+@ app.post("/users/me/friends/add", response_model=User)
+async def add_friend_to_current_user(user_to_add: str = Form(...), current_user: UserInDB = Depends(get_current_active_user)):
+    user = get_firebase_user(firebase_db, user_to_add)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Could not find that user"
+        )
+    
+    if (user_to_add in current_user.friends) or (user_to_add == current_user.username):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You are already friends with that user"
+        )
+
+    add_friend(firebase_db, user_to_add, current_user)
+
+    return user
