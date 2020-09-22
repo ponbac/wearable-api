@@ -440,7 +440,7 @@ async def add_snapshot(username: str = Form(...), value: int = Form(...)):
 
 @ app.post("/users/me/friends/add", response_model=User)
 async def add_friend_to_current_user(user_to_add: str = Form(...), current_user: UserInDB = Depends(get_current_active_user)):
-    user_to_add = user_to_add.lower
+    user_to_add = user_to_add.lower()
     user = get_firebase_user(firebase_db, user_to_add)
     if not user:
         raise HTTPException(
