@@ -344,7 +344,7 @@ def write_to_file(fpath, data_to_write, isImage=False):
 
 
 @ app.get("/pricing")
-async def get_ninja_pricing(type: str = 'Currency', league: str = 'Harvest'):
+async def get_ninja_pricing(type: str = 'Currency', league: str = 'Heist'):
     ninja_file = get_ninja_filename(type)
     if ninja_file == '':
         raise HTTPException(
@@ -367,7 +367,7 @@ async def get_ninja_pricing(type: str = 'Currency', league: str = 'Harvest'):
 
 
 @ app.get("/stash")
-async def get_stash_tab(league: str = 'Harvest', tab: int = 0, account: str = 'poeAccountName', sessid: str = 'PoESessionID'):
+async def get_stash_tab(league: str = 'Heist', tab: int = 0, account: str = 'poeAccountName', sessid: str = 'PoESessionID'):
     s = Session()
 
     # Asks for everything else
