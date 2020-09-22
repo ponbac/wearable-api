@@ -108,7 +108,7 @@ def create_firebase_user(db, user: UserInDB):
     users_ref = db.collection('users')
 
     users_ref.document(user.username.lower()).set({'username': user.username, 'accountname': user.accountname,
-                                                   'poesessid': user.poesessid, 'hashed_password': user.hashed_password, 'disabled': user.disabled, 'friends': {}})
+                                                   'poesessid': user.poesessid, 'hashed_password': user.hashed_password, 'disabled': user.disabled, 'friends': []})
 
 
 def create_snapshot(db, snapshot: Snapshot):
