@@ -440,6 +440,7 @@ async def add_snapshot(username: str = Form(...), value: int = Form(...)):
 
 @ app.post("/users/me/friends/add", response_model=User)
 async def add_friend_to_current_user(user_to_add: str = Form(...), current_user: UserInDB = Depends(get_current_active_user)):
+    user_to_add = user_to_add.lower
     user = get_firebase_user(firebase_db, user_to_add)
     if not user:
         raise HTTPException(
@@ -452,8 +453,6 @@ async def add_friend_to_current_user(user_to_add: str = Form(...), current_user:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="You are already friends with that user"
         )
-
-    print(str(current_user.friends))
 
     add_friend(firebase_db, user_to_add, current_user)
 
