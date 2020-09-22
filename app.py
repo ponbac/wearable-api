@@ -22,7 +22,7 @@ import os
 # EXAMPLE KEY, NOT USED IN PROD!
 SECRET_KEY = "ddb4817c2d6c50b9b09c757d8fe018291a70ed41174d29358a89a10dd0a9f012"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 120
+ACCESS_TOKEN_EXPIRE_MINUTES = 1440
 
 
 # Init Firestore
@@ -452,6 +452,8 @@ async def add_friend_to_current_user(user_to_add: str = Form(...), current_user:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="You are already friends with that user"
         )
+
+    print(str(current_user.friends))
 
     add_friend(firebase_db, user_to_add, current_user)
 
