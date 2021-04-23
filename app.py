@@ -374,6 +374,9 @@ async def get_stash_tab(league: str = 'Ultimatum', tab: int = 0, account: str = 
     s.cookies.set('POESESSID', None)
     s.cookies.set('POESESSID', sessid)
 
+    # Add headers to bypass Cloudflare
+    s.headers.update({'User-Agent': 'PostmanRuntime/7.26.10', 'Accept': '*/*', 'Connection': 'keep-alive'})
+
     tab_data = s.get(POE_STASH_URL, cookies=s.cookies, params={
                      'league':  league, 'tabs': 1, 'tabIndex': tab, 'accountName': account}).content
 
