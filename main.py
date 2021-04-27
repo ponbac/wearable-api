@@ -1,7 +1,11 @@
+import os
 from datetime import datetime, timedelta
 from typing import Optional
 from requests import get
 from requests.sessions import Session
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+from pydantic import BaseModel
 
 import firebase_admin
 from firebase_admin import credentials
@@ -11,10 +15,7 @@ from fastapi import Depends, FastAPI, HTTPException, status, Form, Response
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, HTMLResponse, FileResponse, StreamingResponse
-from jose import JWTError, jwt
-from passlib.context import CryptContext
-from pydantic import BaseModel
-import os
+from routers import ninja, stash
 
 
 # To get a string like this run:
@@ -22,7 +23,7 @@ import os
 # EXAMPLE KEY, NOT USED IN PROD!
 SECRET_KEY = "ddb4817c2d6c50b9b09c757d8fe018291a70ed41174d29358a89a10dd0a9f012"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 1440
+ACCESS_TOKEN_EXPIRE_MINUTES = 1440 # 24 hours
 
 
 # Init Firestore
@@ -63,10 +64,11 @@ class Snapshot(BaseModel):
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 app = FastAPI()
+app.include_router(ninja.router)
+app.include_router(stash.router)
 
 app.add_middleware(
     CORSMiddleware,
