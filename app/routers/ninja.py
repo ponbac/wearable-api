@@ -5,7 +5,7 @@ from requests import get
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse, FileResponse
 
-from utils import is_not_empty, write_to_file
+from ..utils import is_not_empty, write_to_file
 
 
 router = APIRouter(

@@ -12,10 +12,10 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, HTMLResponse, FileResponse, StreamingResponse
 
-import db
-from utils import is_not_empty, write_to_file
-from routers import ninja, stash
-from schemas.schemas import Token, TokenData, User, UserInDB, Snapshot
+import app.db as db
+from app.utils import is_not_empty, write_to_file
+from app.routers import ninja, stash
+from app.schemas.schemas import Token, TokenData, User, UserInDB, Snapshot
 
 
 # To get a string like this run:
@@ -129,24 +129,25 @@ async def read_users_me(current_user: UserInDB = Depends(get_current_active_user
 
 
 @ app.post("/users/me/friends/add", response_model=User)
-async def add_friend_to_current_user(user_to_add: str = Form(...), current_user: UserInDB = Depends(get_current_active_user)):
-    user_to_add = user_to_add.lower()
-    user = db.get_firebase_user(user_to_add)
-    if not user:
+async def add_friend_to_current_user(username_to_add: str = Form(...), current_user: UserInDB = Depends(get_current_active_user)):
+    username_to_add = username_to_add.lower()
+    user_to_add = db.get_firebase_user(username_to_add)
+
+    if not user_to_add:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Could not find that user"
         )
     
-    if (user_to_add in current_user.friends) or (user_to_add == current_user.username):
+    if (username_to_add in current_user.friends) or (username_to_add == current_user.username):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="You are already friends with that user"
         )
 
-    db.add_friend(user_to_add, current_user)
+    db.add_friend(username_to_add, current_user)
 
-    return user
+    return JSONResponse({'username': current_user.username, 'added_friend': username_to_add})
 
 
 @ app.get("/")
@@ -169,7 +170,7 @@ async def get_icon(path: str = 'https://web.poecdn.com/image/Art/2DItems/Currenc
         file_name = path.split('?')[0].split('/')[-1]
 
     current_dir = os.path.dirname(os.path.realpath(__file__))
-    full_path = current_dir + '/cached_images/' + file_name
+    full_path = current_dir + '/cache/cached_images/' + file_name
 
     if is_not_empty(full_path):
         return FileResponse(full_path)

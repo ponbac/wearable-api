@@ -4,7 +4,7 @@ from firebase_admin import firestore
 
 from passlib.context import CryptContext
 
-from schemas.schemas import Snapshot, User, UserInDB
+from .schemas.schemas import Snapshot, User, UserInDB
 
 # Init Firestore
 cred = credentials.Certificate('firebaseKey.json')
