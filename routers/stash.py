@@ -18,7 +18,7 @@ router = APIRouter(
 POE_STASH_URL = 'https://www.pathofexile.com/character-window/get-stash-items'
 
 
-@ router.get("/stash")
+@ router.get("/")
 async def get_stash_tab(league: str = 'Ultimatum', tab: int = 0, account: str = 'poeAccountName', sessid: str = 'PoESessionID'):
     s = Session()
 

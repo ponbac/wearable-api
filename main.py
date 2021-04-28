@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, HTMLResponse, FileResponse, StreamingResponse
 
 import db
+from utils import is_not_empty, write_to_file
 from routers import ninja, stash
 from schemas.schemas import Token, TokenData, User, UserInDB, Snapshot
 
@@ -22,7 +23,7 @@ from schemas.schemas import Token, TokenData, User, UserInDB, Snapshot
 # EXAMPLE KEY, NOT USED IN PROD!
 SECRET_KEY = "ddb4817c2d6c50b9b09c757d8fe018291a70ed41174d29358a89a10dd0a9f012"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 1440 # 24 hours
+ACCESS_TOKEN_EXPIRE_MINUTES = 2880 # 48 hours
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -153,27 +154,7 @@ async def index():
     return HTMLResponse(content='<h3>coolest poe api, <a href="/docs">/docs</a> for testing</h3>')
 
 
-# TODO: Split this application up into multiple files in a nice way.
-# PoE stash, pricing, and caching related methods below:
-
-CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
-
-
-def is_not_empty(fpath):
-    return os.path.isfile(fpath) and os.path.getsize(fpath) > 0
-
-
-def write_to_file(fpath, data_to_write, isImage=False):
-    if isImage:
-        f = open(fpath, "wb")
-        f.write(data_to_write)
-    else:
-        f = open(fpath, "w+")
-        f.write(data_to_write.decode('utf-8'))
-    f.close
-    print(f'Wrote to {fpath}')
-
-
+# TODO: Move /image into a new resorces router
 @ app.get("/image")
 async def get_icon(path: str = 'https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyUpgradeMagicToRare.png?v=1187a8511b47b35815bd75698de1fa2a&w=1&h=1&scale=1'):
     if not path.split('.com/')[0] == 'https://web.poecdn':
@@ -187,8 +168,8 @@ async def get_icon(path: str = 'https://web.poecdn.com/image/Art/2DItems/Currenc
     else:
         file_name = path.split('?')[0].split('/')[-1]
 
-    folder_path = CURRENT_DIR + '/cached_images'
-    full_path = folder_path + '/' + file_name
+    current_dir = os.path.dirname(os.path.realpath(__file__))
+    full_path = current_dir + '/cached_images/' + file_name
 
     if is_not_empty(full_path):
         return FileResponse(full_path)

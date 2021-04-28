@@ -5,6 +5,8 @@ from requests import get
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse, FileResponse
 
+from utils import is_not_empty, write_to_file
+
 
 router = APIRouter(
     prefix="/ninja",
@@ -21,7 +23,7 @@ CACHE_DIR = CURRENT_DIR.replace('routers', 'cache')
 NINJA_CURRENCY_URL = 'https://poe.ninja/api/data/currencyoverview'
 NINJA_ITEM_URL = 'https://poe.ninja/api/data/itemoverview'
 # Time until cached data is considered old
-TIME_UNTIL_DATA_IS_OLD = 30  # minutes
+TIME_UNTIL_DATA_IS_OLD = 60  # minutes
 
 
 last_updated_dict = {
@@ -109,21 +111,6 @@ def age_is_ok(type_to_check):
     present = datetime.now()
 
     return past > (present - timedelta(minutes=TIME_UNTIL_DATA_IS_OLD))
-
-
-def is_not_empty(fpath):
-    return os.path.isfile(fpath) and os.path.getsize(fpath) > 0
-
-
-def write_to_file(fpath, data_to_write, isImage=False):
-    if isImage:
-        f = open(fpath, "wb")
-        f.write(data_to_write)
-    else:
-        f = open(fpath, "w+")
-        f.write(data_to_write.decode('utf-8'))
-    f.close
-    print(f'Wrote to {fpath}')
 
 
 @router.get("/")
