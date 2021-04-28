@@ -7,15 +7,14 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel
 
-import firebase_admin
-from firebase_admin import credentials
-from firebase_admin import firestore
-
 from fastapi import Depends, FastAPI, HTTPException, status, Form, Response
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, HTMLResponse, FileResponse, StreamingResponse
+
+import db
 from routers import ninja, stash
+from schemas.schemas import Token, TokenData, User, UserInDB, Snapshot
 
 
 # To get a string like this run:
@@ -26,44 +25,6 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 1440 # 24 hours
 
 
-# Init Firestore
-cred = credentials.Certificate('firebaseKey.json')
-firebase_admin.initialize_app(cred, {
-    'projectId': 'poe-currency-ad0db',
-})
-
-firebase_db = firestore.client()
-
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-
-
-class TokenData(BaseModel):
-    username: Optional[str] = None
-
-
-class User(BaseModel):
-    username: str
-    friends: Optional[list] = None
-    latest_snapshot_ref: Optional[str] = None
-    disabled: Optional[bool] = None
-
-
-class UserInDB(User):
-    hashed_password: str
-    accountname: str
-    poesessid: str
-
-
-class Snapshot(BaseModel):
-    username: str
-    value: int
-    date: datetime
-
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 app = FastAPI()
@@ -77,67 +38,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
-    # return plain_password == hashed_password
-
-
-def get_password_hash(password):
-    return pwd_context.hash(password)
-    # return password
-
-
-def get_firebase_user(db, username: str):
-    user_ref = db.collection('users').document(username.lower())
-
-    user = user_ref.get()
-    if user.exists:
-        # print(user.to_dict())
-        return UserInDB(**user.to_dict())
-
-
-def get_snapshot(db, document_reference: str):
-    snapshot_ref = db.collection('snapshots').document(document_reference)
-
-    snapshot = snapshot_ref.get()
-    if snapshot.exists:
-        return Snapshot(**snapshot.to_dict())
-
-
-def create_firebase_user(db, user: UserInDB):
-    users_ref = db.collection('users')
-
-    users_ref.document(user.username.lower()).set({'username': user.username, 'accountname': user.accountname,
-                                                   'poesessid': user.poesessid, 'hashed_password': user.hashed_password, 'disabled': user.disabled, 'friends': []})
-
-
-def create_snapshot(db, snapshot: Snapshot):
-    snapshots_ref = db.collection('snapshots')
-    users_ref = db.collection('users')
-
-    # Add snapshot to snapshots collection
-    snapshot_ref = snapshots_ref.document()
-    snapshot_ref.set(snapshot.dict())
-
-    # Update latest_snapshot_ref for the user
-    users_ref.document(snapshot.username.lower()).update(
-        {'latest_snapshot_ref': snapshot_ref.id})
-
-
-def add_friend(db, friend_to_add: str, current_user: User):
-    current_user_ref = db.collection('users').document(current_user.username.lower())
-    current_user_ref.update({u'friends': firestore.ArrayUnion([friend_to_add])})
-
-
-def authenticate_user(db, username: str, password: str):
-    user = get_firebase_user(db, username)
-    if not user:
-        return False
-    if not verify_password(password, user.hashed_password):
-        return False
-    return user
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
@@ -165,7 +65,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         token_data = TokenData(username=username)
     except JWTError:
         raise credentials_exception
-    user = get_firebase_user(firebase_db, username=token_data.username)
+    user = db.get_firebase_user(username=token_data.username)
     if user is None:
         raise credentials_exception
     return user
@@ -179,7 +79,7 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
 
 @ app.post("/register", response_model=User)
 async def register_user(username: str = Form(...), password: str = Form(...), accountname: str = Form(...), poesessid: str = Form(...)):
-    user = get_firebase_user(firebase_db, username)
+    user = db.get_firebase_user(username)
     if user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -196,18 +96,17 @@ async def register_user(username: str = Form(...), password: str = Form(...), ac
         accountname=accountname,
         poesessid=poesessid,
         disabled=False,
-        hashed_password=get_password_hash(password),
+        hashed_password=db.get_password_hash(password),
     )
 
-    create_firebase_user(firebase_db, user)
+    db.create_firebase_user(user)
 
     return user
 
 
 @ app.post("/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
-    user = authenticate_user(
-        firebase_db, form_data.username, form_data.password)
+    user = db.authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -228,6 +127,27 @@ async def read_users_me(current_user: UserInDB = Depends(get_current_active_user
     return current_user
 
 
+@ app.post("/users/me/friends/add", response_model=User)
+async def add_friend_to_current_user(user_to_add: str = Form(...), current_user: UserInDB = Depends(get_current_active_user)):
+    user_to_add = user_to_add.lower()
+    user = db.get_firebase_user(user_to_add)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Could not find that user"
+        )
+    
+    if (user_to_add in current_user.friends) or (user_to_add == current_user.username):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You are already friends with that user"
+        )
+
+    db.add_friend(user_to_add, current_user)
+
+    return user
+
+
 @ app.get("/")
 async def index():
     return HTMLResponse(content='<h3>coolest poe api, <a href="/docs">/docs</a> for testing</h3>')
@@ -237,7 +157,6 @@ async def index():
 # PoE stash, pricing, and caching related methods below:
 
 CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
-POE_STASH_URL = 'https://www.pathofexile.com/character-window/get-stash-items'
 
 
 def is_not_empty(fpath):
@@ -253,23 +172,6 @@ def write_to_file(fpath, data_to_write, isImage=False):
         f.write(data_to_write.decode('utf-8'))
     f.close
     print(f'Wrote to {fpath}')
-
-
-@ app.get("/stash")
-async def get_stash_tab(league: str = 'Ultimatum', tab: int = 0, account: str = 'poeAccountName', sessid: str = 'PoESessionID'):
-    s = Session()
-
-    # Asks for everything else
-    s.cookies.set('POESESSID', None)
-    s.cookies.set('POESESSID', sessid)
-
-    # Add headers to bypass Cloudflare
-    s.headers.update({'User-Agent': 'PostmanRuntime/7.26.10', 'Accept': '*/*', 'Connection': 'keep-alive'})
-
-    tab_data = s.get(POE_STASH_URL, cookies=s.cookies, params={
-                     'league':  league, 'tabs': 1, 'tabIndex': tab, 'accountName': account}).content
-
-    return HTMLResponse(content=tab_data)
 
 
 @ app.get("/image")
@@ -295,57 +197,3 @@ async def get_icon(path: str = 'https://web.poecdn.com/image/Art/2DItems/Currenc
         write_to_file(full_path, image, isImage=True)
         return Response(content=image, media_type='image/png')
 
-
-@ app.get("/snapshot/latest", response_model=Snapshot)
-async def get_latest_snapshot(username: str):
-    user = get_firebase_user(firebase_db, username)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Could not find that user"
-        )
-
-    latest_snapshot = get_snapshot(firebase_db, user.latest_snapshot_ref)
-    if not latest_snapshot:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="This user does not have any snapshots"
-        )
-
-    return latest_snapshot
-
-
-@ app.post("/snapshot/add", response_model=Snapshot)
-async def add_snapshot(username: str = Form(...), value: int = Form(...)):
-    user = get_firebase_user(firebase_db, username)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Could not find that user"
-        )
-
-    snapshot = Snapshot(username=username, value=value, date=datetime.now())
-    create_snapshot(firebase_db, snapshot)
-
-    return snapshot
-
-
-@ app.post("/users/me/friends/add", response_model=User)
-async def add_friend_to_current_user(user_to_add: str = Form(...), current_user: UserInDB = Depends(get_current_active_user)):
-    user_to_add = user_to_add.lower()
-    user = get_firebase_user(firebase_db, user_to_add)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Could not find that user"
-        )
-    
-    if (user_to_add in current_user.friends) or (user_to_add == current_user.username):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="You are already friends with that user"
-        )
-
-    add_friend(firebase_db, user_to_add, current_user)
-
-    return user
