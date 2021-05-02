@@ -133,3 +133,4 @@ dmypy.json
 # cached_ninja_data/
 # cached_images/
 .vscode/
+firebaseKey.json
