@@ -2,20 +2,17 @@ import os
 from datetime import datetime, timedelta
 from typing import Optional
 from requests import get
-from requests.sessions import Session
 from jose import JWTError, jwt
-from passlib.context import CryptContext
-from pydantic import BaseModel
 
 from fastapi import Depends, FastAPI, HTTPException, status, Form, Response
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, HTMLResponse, FileResponse, StreamingResponse
+from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
 
 import app.db as db
 from app.utils import is_not_empty, write_to_file
 from app.routers import ninja, stash
-from app.schemas.schemas import Token, TokenData, User, UserInDB, Snapshot
+from app.schemas.schemas import Token, TokenData, User, UserInDB
 
 
 # To get a string like this run:
