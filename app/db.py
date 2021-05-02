@@ -5,11 +5,12 @@ from firebase_admin import firestore
 from passlib.context import CryptContext
 
 from .schemas.schemas import Snapshot, User, UserInDB
+from .config import settings
 
 # Init Firestore
 cred = credentials.Certificate('firebaseKey.json')
 firebase_admin.initialize_app(cred, {
-    'projectId': 'poe-currency-ad0db',
+    'projectId': settings.FB_PROJECT_ID,
 })
 
 firebase_db = firestore.client()

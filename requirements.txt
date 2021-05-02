@@ -15,3 +15,4 @@ passlib[bcrypt]
 python-multipart
 aiofiles
 firebase-admin
+python-dotenv

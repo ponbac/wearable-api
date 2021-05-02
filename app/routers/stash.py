@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Form
 
 from ..db import get_firebase_user, get_snapshot, create_snapshot
 from ..schemas.schemas import Snapshot
+from ..config import settings
 
 
 router = APIRouter(
@@ -15,7 +16,7 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
-POE_STASH_URL = 'https://www.pathofexile.com/character-window/get-stash-items'
+POE_STASH_URL = settings.POE_STASH_URL
 
 
 @ router.get("/")
