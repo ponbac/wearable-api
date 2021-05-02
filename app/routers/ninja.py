@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse, FileResponse
 
 from ..utils import is_not_empty, write_to_file
+from ..config import settings
 
 
 router = APIRouter(
@@ -20,10 +21,10 @@ router = APIRouter(
 CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
 CACHE_DIR = CURRENT_DIR.replace('routers', 'cache')
 # API URLs
-NINJA_CURRENCY_URL = 'https://poe.ninja/api/data/currencyoverview'
-NINJA_ITEM_URL = 'https://poe.ninja/api/data/itemoverview'
+NINJA_CURRENCY_URL = settings.NINJA_CURRENCY_URL
+NINJA_ITEM_URL = settings.NINJA_ITEM_URL
 # Time until cached data is considered old
-TIME_UNTIL_DATA_IS_OLD = 60  # minutes
+TIME_UNTIL_DATA_IS_OLD = settings.NINJA_DATA_OLD  # minutes
 
 
 last_updated_dict = {

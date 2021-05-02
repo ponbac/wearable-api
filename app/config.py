@@ -6,7 +6,13 @@ class Settings(BaseSettings):
     ALGORITHM: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
 
-    FB_PROJECTID: str
+    FB_PROJECT_ID: str
+
+    NINJA_CURRENCY_URL: str
+    NINJA_ITEM_URL: str
+    NINJA_DATA_OLD: int
+
+    POE_STASH_URL: str
 
     class Config:
         case_sensitive = True

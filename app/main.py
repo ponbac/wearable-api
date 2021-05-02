@@ -13,14 +13,14 @@ import app.db as db
 from app.utils import is_not_empty, write_to_file
 from app.routers import ninja, stash
 from app.schemas.schemas import Token, TokenData, User, UserInDB
-
+from .config import settings
 
 # To get a string like this run:
 # openssl rand -hex 32
 # EXAMPLE KEY, NOT USED IN PROD!
-SECRET_KEY = "ddb4817c2d6c50b9b09c757d8fe018291a70ed41174d29358a89a10dd0a9f012"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 2880 # 48 hours
+SECRET_KEY = settings.SECRET_KEY
+ALGORITHM = settings.ALGORITHM
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES # 48 hours
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -118,7 +118,6 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-# TODO: Should not return field hashed_password?
 @ app.get("/users/me/", response_model=UserInDB)
 async def read_users_me(current_user: UserInDB = Depends(get_current_active_user)):
     current_user.hashed_password = 'SECRET'
