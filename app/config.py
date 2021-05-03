@@ -6,7 +6,17 @@ class Settings(BaseSettings):
     ALGORITHM: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
 
-    FB_PROJECT_ID: str
+    # Firebase Auth
+    type: str
+    project_id: str
+    private_key_id: str
+    private_key: str
+    client_email: str
+    client_id: str
+    auth_uri: str
+    token_uri: str
+    auth_provider_x509_cert_url: str
+    client_x509_cert_url: str
 
     NINJA_CURRENCY_URL: str
     NINJA_ITEM_URL: str

@@ -3,14 +3,37 @@ from firebase_admin import credentials
 from firebase_admin import firestore
 
 from passlib.context import CryptContext
+import json
 
 from .schemas.schemas import Snapshot, User, UserInDB
 from .config import settings
 
 # Init Firestore
+auth = {
+  "type": settings.type,
+  "project_id": settings.project_id,
+  "private_key_id": settings.private_key_id,
+  "private_key": settings.private_key,
+  "client_email": settings.client_email,
+  "client_id": settings.client_id,
+  "auth_uri": settings.auth_uri,
+  "token_uri": settings.token_uri,
+  "auth_provider_x509_cert_url": settings.auth_provider_x509_cert_url,
+  "client_x509_cert_url": settings.client_x509_cert_url
+}
+
+# TODO: Remove this ugly workaround, should be able to give initialize_app a dict directly...
+with open('firebaseKey.json', 'w+') as file:
+    json.dump(auth, file)
+with open('firebaseKey.json','r') as file:
+    content = file.read()
+    content = content.replace('\\\\n', '\\n')
+with open('firebaseKey.json','w') as file:
+    file.write(content)
+
 cred = credentials.Certificate('firebaseKey.json')
 firebase_admin.initialize_app(cred, {
-    'projectId': settings.FB_PROJECT_ID,
+    'projectId': settings.project_id,
 })
 
 firebase_db = firestore.client()
