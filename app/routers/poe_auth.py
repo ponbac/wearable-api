@@ -42,7 +42,7 @@ def code_for_token(code: str):
 
 
 # TODO: Should depend on being logged in!
-@ router.post("/oauth2callback")
+@ router.get("/oauth2callback")
 async def handle_oauth2callback(code: str, state: str):
     try:
         if state_dict[state]:
