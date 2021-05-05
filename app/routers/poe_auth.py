@@ -19,7 +19,7 @@ router = APIRouter(
 # TODO: Temporary solution
 state_dict = {}
 
-TOKEN_URL = 'https://api.pathofexile.com/oauth/token'
+TOKEN_URL = 'https://pathofexile.com/oauth/token'
 
 # Takes a code and exchanges it for an access_token and refresh_token
 def code_for_token(code: str):
