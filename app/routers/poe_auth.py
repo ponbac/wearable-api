@@ -1,6 +1,6 @@
 from requests.sessions import Session
 from datetime import datetime, timedelta
-from secrets import token_urlsafe
+from secrets import token_hex
 
 from fastapi.responses import JSONResponse, HTMLResponse, FileResponse, StreamingResponse
 from fastapi import APIRouter, Depends, HTTPException, status, Form
@@ -61,7 +61,7 @@ async def get_auth_url():
     client_id = settings.POE_CLIENT_ID
     response_type = 'code'
     scope = 'account:profile%20account:characters%20account:stashes'
-    state = token_urlsafe(16)
+    state = token_hex(16)
     redirect_uri = settings.POE_REDIRECT_URL
     prompt = 'consent'
 
