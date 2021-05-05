@@ -2,11 +2,10 @@ from requests.sessions import Session
 from datetime import datetime, timedelta
 from secrets import token_hex
 
-from fastapi.responses import JSONResponse, HTMLResponse, FileResponse, StreamingResponse
-from fastapi import APIRouter, Depends, HTTPException, status, Form
+from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
+from fastapi import APIRouter, Depends, HTTPException, status, Form, Response
 
-from ..db import get_firebase_user, get_snapshot, create_snapshot, set_access_token
-from ..schemas.schemas import Snapshot
+from ..db import set_access_token
 from ..config import settings
 
 
@@ -25,16 +24,15 @@ TOKEN_URL = 'https://www.pathofexile.com/oauth/token'
 def code_for_token(code: str):
     # Add headers to follow GGG API guidelines, Session() kind of not needed
     s = Session()
-    s.headers.update({'User-Agent': f'OAuth {settings.POE_CLIENT_ID}/1.0.0 (contact: ponbac@student.chalmers.se)'})
-    resp = s.post(TOKEN_URL, data={'client_id': settings.POE_CLIENT_ID, 'client_secret': settings.POE_CLIENT_SECRET, 'grant_type': 'authorization_code', 'code': code, 'redirect_uri': settings.POE_REDIRECT_URL, 'scope': 'account:profile account:characters account:stashes'})
+    s.headers.update(
+        {'User-Agent': f'OAuth {settings.POE_CLIENT_ID}/1.0.0 (contact: ponbac@student.chalmers.se)'})
+    resp = s.post(TOKEN_URL, data={'client_id': settings.POE_CLIENT_ID, 'client_secret': settings.POE_CLIENT_SECRET, 'grant_type': 'authorization_code',
+                  'code': code, 'redirect_uri': settings.POE_REDIRECT_URL, 'scope': 'account:profile account:characters account:stashes'})
 
-    #print(f'Status code: {resp.status_code}')
-    #print(f'Headers: {resp.headers}')
     resp_json = resp.json()
-    print(resp_json)
     if resp.status_code == 200:
         return resp_json['access_token'], resp_json['refresh_token']
-    print('Could not exchange code for token!')
+    print(f'Could not exchange code for token! Error: {resp_json}')
     return None, None
 
 
@@ -72,11 +70,25 @@ async def get_auth_url():
     return {"url": auth_url}
 
 
-@ router.post("/auth/test")
-async def auth_test(code: str = Form(...), test: str = Form(...)):
-    set_access_token('access-test', 'refresh-test')
-
+@ router.get("/auth/test")
+async def auth_test():
     s = Session()
-    s.headers.update({'User-Agent': f'OAuth {settings.POE_CLIENT_ID}/1.0.0 (contact: ponbac@student.chalmers.se)'})
-    leagues = s.get('https://api.pathofexile.com/league')
-    return {'status': leagues.status_code, 'content': leagues.content}
+    s.headers.update({'User-Agent': f'OAuth {settings.POE_CLIENT_ID}/1.0.0 (contact: ponbac@student.chalmers.se)',
+                     'Authorization': 'Bearer ba1c29ad03965900d6a5eef1ab31d4902e591928'})
+    res = s.get('https://api.pathofexile.com/character')
+    print(f'Get Status: {res.status_code}')
+
+    # Forward all rate limit-related headers
+    policy = res.headers['x-rate-limit-policy']
+    rules = res.headers['x-rate-limit-rules']
+    client = res.headers[f'x-rate-limit-{rules}']
+    client_state = res.headers[f'x-rate-limit-{rules}-state']
+    headers = {'X-Rate-Limit-Policy': policy, 'X-Rate-Limit-Rules': rules, f'X-Rate-Limit': client, f'X-Rate-Limit-State': client_state}
+    
+    # Check if currently rate limited
+    try:
+        retry = res.headers['retry-after']
+        headers['Retry-After'] = retry
+    except:
+        headers['Retry-After'] = 'OK'
+    return JSONResponse(content=res.json(), headers=headers)
