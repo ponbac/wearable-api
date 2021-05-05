@@ -79,4 +79,8 @@ async def get_auth_url():
 @ router.post("/auth/test")
 async def auth_test(code: str = Form(...), test: str = Form(...)):
     set_access_token('access-test', 'refresh-test')
-    return {"code": code, "test": test}
+
+    s = Session()
+    s.headers.update({'User-Agent': f'OAuth {settings.POE_CLIENT_ID}/1.0.0 (contact: ponbac@student.chalmers.se)'})
+    leagues = s.get('https://api.pathofexile.com/league')
+    return {leagues.json()}
