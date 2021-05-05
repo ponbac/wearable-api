@@ -28,9 +28,12 @@ def code_for_token(code: str):
     # Add headers to follow GGG API guidelines, Session() kind of not needed
     s = Session()
     s.headers.update({'User-Agent': f'OAuth {settings.POE_CLIENT_ID}/1.0.0 (contact: ponbac@student.chalmers.se)'})
-    resp = s.post(TOKEN_URL, params={'client_id': settings.POE_CLIENT_ID, 'client_secret': settings.POE_CLIENT_SECRET, 'grant_type': 'authorization_code', 'code': code, 'redirect_uri': settings.POE_REDIRECT_URL, 'scope': 'account:profile%20account:characters%20account:stashes'})
+    # resp = s.post(TOKEN_URL, params={'client_id': settings.POE_CLIENT_ID, 'client_secret': settings.POE_CLIENT_SECRET, 'grant_type': 'authorization_code', 'code': code, 'redirect_uri': settings.POE_REDIRECT_URL, 'scope': 'account:profile%20account:characters%20account:stashes'})
+    resp = s.post(TOKEN_URL, data={'client_id': settings.POE_CLIENT_ID, 'client_secret': settings.POE_CLIENT_SECRET, 'grant_type': 'authorization_code', 'code': code, 'redirect_uri': settings.POE_REDIRECT_URL, 'scope': 'account:profile%20account:characters%20account:stashes'})
+
 
     print(f'Status code: {resp.status_code}')
+    print(f'Headers: {resp.headers}')
     resp_json = resp.json()
     print(resp_json)
     if resp.status_code == 200:
@@ -75,6 +78,6 @@ async def get_auth_url():
 
 
 @ router.post("/auth/test")
-async def get_auth_url(code: str, test: str):
+async def auth_test(code: str, test: str):
     set_access_token('access-test', 'refresh-test')
     return {"code": code, "test": test}
