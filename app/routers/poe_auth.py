@@ -25,12 +25,12 @@ TOKEN_URL = 'https://api.pathofexile.com/oauth/token'
 def code_for_token(code: str):
     # Add headers to follow GGG API guidelines, Session() kind of not needed
     s = Session()
-    s.headers.update({'User-Agent': f'OAuth {settings.POE_CLIENT_ID}/1.0.0 (contact: ponbac@student.chalmers.se)'})
+    s.headers.update({'User-Agent': f'OAuth {settings.POE_CLIENT_ID}/1.0.0 (contact: ponbac@student.chalmers.se) StrictMode'})
     resp = s.post(TOKEN_URL, params={'client_id': settings.POE_CLIENT_ID, 'client_secret': settings.POE_CLIENT_SECRET, 'grant_type': 'authorization_code', 'code': code, 'redirect_uri': settings.POE_REDIRECT_URL, 'scope': 'account:profile%20account:characters%20account:stashes'})
 
+    resp_json = resp.json()
+    print(resp_json)
     if resp.status_code == 200:
-        resp_json = resp.json()
-        print(resp_json)
         return resp_json['access_token'], resp_json['refresh_token']
     print('Could not exchange code for token!')
     return None, None
