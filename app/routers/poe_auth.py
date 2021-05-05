@@ -21,18 +21,15 @@ state_dict = {}
 
 TOKEN_URL = 'https://www.pathofexile.com/oauth/token'
 
-# Status code: 405
-# {'error': 'invalid_request', 'error_description': 'The request method must be POST when requesting an access token', 'error_uri': 'http://tools.ietf.org/html/rfc6749#section-3.2'}
 # Takes a code and exchanges it for an access_token and refresh_token
 def code_for_token(code: str):
     # Add headers to follow GGG API guidelines, Session() kind of not needed
     s = Session()
     s.headers.update({'User-Agent': f'OAuth {settings.POE_CLIENT_ID}/1.0.0 (contact: ponbac@student.chalmers.se)'})
-    # resp = s.post(TOKEN_URL, params={'client_id': settings.POE_CLIENT_ID, 'client_secret': settings.POE_CLIENT_SECRET, 'grant_type': 'authorization_code', 'code': code, 'redirect_uri': settings.POE_REDIRECT_URL, 'scope': 'account:profile%20account:characters%20account:stashes'})
     resp = s.post(TOKEN_URL, data={'client_id': settings.POE_CLIENT_ID, 'client_secret': settings.POE_CLIENT_SECRET, 'grant_type': 'authorization_code', 'code': code, 'redirect_uri': settings.POE_REDIRECT_URL, 'scope': 'account:profile account:characters account:stashes'})
 
-    print(f'Status code: {resp.status_code}')
-    print(f'Headers: {resp.headers}')
+    #print(f'Status code: {resp.status_code}')
+    #print(f'Headers: {resp.headers}')
     resp_json = resp.json()
     print(resp_json)
     if resp.status_code == 200:
@@ -55,7 +52,6 @@ async def handle_oauth2callback(code: str, state: str):
     access_token, refresh_token = code_for_token(code)
     if access_token is not None and refresh_token is not None:
         set_access_token(access_token, refresh_token)
-        print()
 
     return HTMLResponse('<h2>OAuth2 Callback!</h2>')
 
@@ -83,4 +79,4 @@ async def auth_test(code: str = Form(...), test: str = Form(...)):
     s = Session()
     s.headers.update({'User-Agent': f'OAuth {settings.POE_CLIENT_ID}/1.0.0 (contact: ponbac@student.chalmers.se)'})
     leagues = s.get('https://api.pathofexile.com/league')
-    return {leagues.json()}
+    return {'status': leagues.status_code, 'content': leagues.content}
