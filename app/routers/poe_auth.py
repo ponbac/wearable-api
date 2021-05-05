@@ -17,7 +17,7 @@ router = APIRouter(
 )
 
 # TODO: Temporary solution
-state_dict = {'test-state': 1}
+state_dict = {}
 
 TOKEN_URL = 'https://api.pathofexile.com/oauth/token'
 
@@ -42,14 +42,15 @@ async def handle_oauth2callback(code: str, state: str):
     try:
         if state_dict[state]:
             print(f'Found state: {state} with code={code}')
-            access_token, refresh_token = code_for_token(code)
-            if access_token is not None and refresh_token is not None:
-                set_access_token(access_token, refresh_token)
     except:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid state parameter: {state}!"
+            detail=f'Invalid state parameter: {state}!'
         )
+    access_token, refresh_token = code_for_token(code)
+    if access_token is not None and refresh_token is not None:
+        set_access_token(access_token, refresh_token)
+        print()
 
     return HTMLResponse('<h2>OAuth2 Callback!</h2>')
 
