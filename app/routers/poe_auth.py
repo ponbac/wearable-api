@@ -29,7 +29,7 @@ def code_for_token(code: str):
     s = Session()
     s.headers.update({'User-Agent': f'OAuth {settings.POE_CLIENT_ID}/1.0.0 (contact: ponbac@student.chalmers.se)'})
     # resp = s.post(TOKEN_URL, params={'client_id': settings.POE_CLIENT_ID, 'client_secret': settings.POE_CLIENT_SECRET, 'grant_type': 'authorization_code', 'code': code, 'redirect_uri': settings.POE_REDIRECT_URL, 'scope': 'account:profile%20account:characters%20account:stashes'})
-    resp = s.post(TOKEN_URL, data={'client_id': settings.POE_CLIENT_ID, 'client_secret': settings.POE_CLIENT_SECRET, 'grant_type': 'authorization_code', 'code': code, 'redirect_uri': settings.POE_REDIRECT_URL, 'scope': 'account:profile%20account:characters%20account:stashes'})
+    resp = s.post(TOKEN_URL, data={'client_id': settings.POE_CLIENT_ID, 'client_secret': settings.POE_CLIENT_SECRET, 'grant_type': 'authorization_code', 'code': code, 'redirect_uri': settings.POE_REDIRECT_URL, 'scope': 'account:profile account:characters account:stashes'})
 
     print(f'Status code: {resp.status_code}')
     print(f'Headers: {resp.headers}')
@@ -64,7 +64,7 @@ async def handle_oauth2callback(code: str, state: str):
 async def get_auth_url():
     client_id = settings.POE_CLIENT_ID
     response_type = 'code'
-    scope = 'account:profile%20account:characters%20account:stashes'
+    scope = 'account:profile account:characters account:stashes'
     state = token_hex(16)
     redirect_uri = settings.POE_REDIRECT_URL
     prompt = 'consent'
