@@ -21,11 +21,13 @@ state_dict = {}
 
 TOKEN_URL = 'https://pathofexile.com/oauth/token'
 
+# Status code: 405
+# {'error': 'invalid_request', 'error_description': 'The request method must be POST when requesting an access token', 'error_uri': 'http://tools.ietf.org/html/rfc6749#section-3.2'}
 # Takes a code and exchanges it for an access_token and refresh_token
 def code_for_token(code: str):
     # Add headers to follow GGG API guidelines, Session() kind of not needed
     s = Session()
-    s.headers.update({'User-Agent': f'OAuth {settings.POE_CLIENT_ID}/1.0.0 (contact: ponbac@student.chalmers.se) StrictMode'})
+    s.headers.update({'User-Agent': f'OAuth {settings.POE_CLIENT_ID}/1.0.0 (contact: ponbac@student.chalmers.se)'})
     resp = s.post(TOKEN_URL, params={'client_id': settings.POE_CLIENT_ID, 'client_secret': settings.POE_CLIENT_SECRET, 'grant_type': 'authorization_code', 'code': code, 'redirect_uri': settings.POE_REDIRECT_URL, 'scope': 'account:profile%20account:characters%20account:stashes'})
 
     print(f'Status code: {resp.status_code}')
