@@ -99,3 +99,9 @@ def authenticate_user(username: str, password: str):
     if not verify_password(password, user.hashed_password):
         return False
     return user
+
+# TODO: Should not be hardcoded
+def set_access_token(access_token: str, refresh_token: str):
+    users_ref = firebase_db.collection('users')
+    users_ref.document('pontus').update(
+        {'access_token': access_token, 'refresh_token': refresh_token})

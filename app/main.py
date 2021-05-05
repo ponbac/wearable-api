@@ -11,7 +11,7 @@ from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
 
 import app.db as db
 from app.utils import is_not_empty, write_to_file
-from app.routers import ninja, stash
+from app.routers import ninja, stash, poe_auth
 from app.schemas.schemas import Token, TokenData, User, UserInDB
 from .config import settings
 
@@ -26,6 +26,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES # 48 hours
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 app = FastAPI()
+app.include_router(poe_auth.router) # official poe api-router
 app.include_router(ninja.router) # poe.ninja-router
 app.include_router(stash.router) # stash-router
 
