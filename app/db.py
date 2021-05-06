@@ -101,7 +101,7 @@ def authenticate_user(username: str, password: str):
     return user
 
 # TODO: Should not be hardcoded
-def set_access_token(access_token: str, refresh_token: str):
+def set_access_token(username: str, access_token: str, refresh_token: str):
     users_ref = firebase_db.collection('users')
-    users_ref.document('pontus').update(
+    users_ref.document(username.lower()).update(
         {'access_token': access_token, 'refresh_token': refresh_token})

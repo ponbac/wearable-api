@@ -7,6 +7,8 @@ from fastapi import APIRouter, Depends, HTTPException, status, Form, Response
 
 from ..db import set_access_token
 from ..config import settings
+from ..dependencies import get_current_user
+from ..schemas.schemas import UserInDB
 
 
 router = APIRouter(
@@ -38,7 +40,7 @@ def code_for_token(code: str):
 
 # TODO: Should depend on being logged in!
 @ router.get("/oauth2callback")
-async def handle_oauth2callback(code: str, state: str):
+async def handle_oauth2callback(code: str, state: str, current_user: UserInDB = Depends(get_current_user)):
     try:
         if state_dict[state]:
             print(f'Found state: {state} with code={code}')
@@ -49,7 +51,7 @@ async def handle_oauth2callback(code: str, state: str):
         )
     access_token, refresh_token = code_for_token(code)
     if access_token is not None and refresh_token is not None:
-        set_access_token(access_token, refresh_token)
+        set_access_token(current_user.username, access_token, refresh_token)
 
     return HTMLResponse('<h2>OAuth2 Callback!</h2>')
 
@@ -75,7 +77,7 @@ async def auth_test():
     s = Session()
     s.headers.update({'User-Agent': f'OAuth {settings.POE_CLIENT_ID}/1.0.0 (contact: ponbac@student.chalmers.se)',
                      'Authorization': 'Bearer ba1c29ad03965900d6a5eef1ab31d4902e591928'})
-    res = s.get('https://api.pathofexile.com/character')
+    res = s.get('https://api.pathofexile.com/stash/SSF%20Ultimatum/0e2cbde323/50d58da4ee')
     print(f'Get Status: {res.status_code}')
 
     # Forward all rate limit-related headers
