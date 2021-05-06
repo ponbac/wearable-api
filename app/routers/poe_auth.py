@@ -40,7 +40,7 @@ def code_for_token(code: str):
 
 # TODO: Should depend on being logged in!
 @ router.get("/oauth2callback")
-async def handle_oauth2callback(code: str, state: str, current_user: UserInDB = Depends(get_current_user)):
+async def handle_oauth2callback(code: str, state: str):
     try:
         if state_dict[state]:
             print(f'Found state: {state} with code={code}')
@@ -51,13 +51,13 @@ async def handle_oauth2callback(code: str, state: str, current_user: UserInDB = 
         )
     access_token, refresh_token = code_for_token(code)
     if access_token is not None and refresh_token is not None:
-        set_access_token(current_user.username, access_token, refresh_token)
+        set_access_token(state_dict[state], access_token, refresh_token)
 
     return HTMLResponse('<h2>OAuth2 Callback!</h2>')
 
 
 @ router.get("/auth/url")
-async def get_auth_url():
+async def get_auth_url(current_user: UserInDB = Depends(get_current_user)):
     client_id = settings.POE_CLIENT_ID
     response_type = 'code'
     scope = 'account:profile account:characters account:stashes'
@@ -66,7 +66,7 @@ async def get_auth_url():
     prompt = 'consent'
 
     # Add generated state to state_dict
-    state_dict[state] = 1
+    state_dict[state] = current_user.username
 
     auth_url = f'https://www.pathofexile.com/oauth/authorize?client_id={client_id}&response_type={response_type}&scope={scope}&state={state}&redirect_uri={redirect_uri}&prompt={prompt}'
     return {"url": auth_url}
