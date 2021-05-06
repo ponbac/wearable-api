@@ -53,7 +53,7 @@ async def handle_oauth2callback(code: str, state: str):
     if access_token is not None and refresh_token is not None:
         set_access_token(state_dict[state], access_token, refresh_token)
 
-    return HTMLResponse('<h2>OAuth2 Callback!</h2>')
+    return HTMLResponse(f'<h2>Successful authentication!</h2><h4>token: {access_token}</h4>')
 
 
 @ router.get("/auth/url")
@@ -73,12 +73,11 @@ async def get_auth_url(current_user: UserInDB = Depends(get_current_user)):
 
 
 @ router.get("/auth/test")
-async def auth_test():
+async def auth_test(current_user: UserInDB = Depends(get_current_user)):
     s = Session()
     s.headers.update({'User-Agent': f'OAuth {settings.POE_CLIENT_ID}/1.0.0 (contact: ponbac@student.chalmers.se)',
-                     'Authorization': 'Bearer ba1c29ad03965900d6a5eef1ab31d4902e591928'})
-    res = s.get('https://api.pathofexile.com/stash/SSF%20Ultimatum/0e2cbde323/50d58da4ee')
-    print(f'Get Status: {res.status_code}')
+                     'Authorization': f'Bearer {current_user.access_token}'})
+    res = s.get('https://api.pathofexile.com/character')
 
     # Forward all rate limit-related headers
     policy = res.headers['x-rate-limit-policy']

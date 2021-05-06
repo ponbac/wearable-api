@@ -23,6 +23,8 @@ class UserInDB(User):
     hashed_password: str
     accountname: str
     poesessid: str
+    access_token: str
+    refresh_token: str
 
 
 class Snapshot(BaseModel):
