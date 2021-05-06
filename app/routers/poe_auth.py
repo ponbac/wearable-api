@@ -61,7 +61,7 @@ async def get_auth_url(current_user: UserInDB = Depends(get_current_user)):
     client_id = settings.POE_CLIENT_ID
     response_type = 'code'
     scope = 'account:profile account:characters account:stashes'
-    state = token_hex(16)
+    state = token_hex(14)
     redirect_uri = settings.POE_REDIRECT_URL
     prompt = 'consent'
 
