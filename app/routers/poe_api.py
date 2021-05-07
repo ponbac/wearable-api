@@ -48,7 +48,6 @@ def set_headers(api_response):
 @ router.get("/profile")
 async def get_profile(current_user: UserInDB = Depends(get_current_user)):
     res = get_api_data('/profile', current_user)
-    print(res.headers)
     headers = set_headers(res)
 
     return JSONResponse(content=res.json(), headers=headers)
