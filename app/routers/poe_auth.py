@@ -1,8 +1,7 @@
 from requests.sessions import Session
-from datetime import datetime, timedelta
 from secrets import token_hex
 
-from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse
 from fastapi import APIRouter, Depends, HTTPException, status, Form, Response
 
 from ..db import set_access_token
@@ -38,7 +37,6 @@ def code_for_token(code: str):
     return None, None
 
 
-# TODO: Should depend on being logged in!
 @ router.get("/oauth2callback")
 async def handle_oauth2callback(code: str, state: str):
     try:
@@ -49,10 +47,15 @@ async def handle_oauth2callback(code: str, state: str):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f'Invalid state parameter: {state}!'
         )
+        
     access_token, refresh_token = code_for_token(code)
-    if access_token is not None and refresh_token is not None:
-        set_access_token(state_dict[state], access_token, refresh_token)
-
+    if access_token is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f'Could not exchange code for token with code: {code}!'
+        )
+        
+    set_access_token(state_dict[state], access_token, refresh_token)
     return HTMLResponse(f'<h2>Successful authentication!</h2><h4>token: {access_token}</h4>')
 
 
@@ -70,26 +73,3 @@ async def get_auth_url(current_user: UserInDB = Depends(get_current_user)):
 
     auth_url = f'https://www.pathofexile.com/oauth/authorize?client_id={client_id}&response_type={response_type}&scope={scope}&state={state}&redirect_uri={redirect_uri}&prompt={prompt}'
     return {"url": auth_url}
-
-
-@ router.get("/auth/test")
-async def auth_test(current_user: UserInDB = Depends(get_current_user)):
-    s = Session()
-    s.headers.update({'User-Agent': f'OAuth {settings.POE_CLIENT_ID}/1.0.0 (contact: ponbac@student.chalmers.se)',
-                     'Authorization': f'Bearer {current_user.access_token}'})
-    res = s.get('https://api.pathofexile.com/character')
-
-    # Forward all rate limit-related headers
-    policy = res.headers['x-rate-limit-policy']
-    rules = res.headers['x-rate-limit-rules']
-    client = res.headers[f'x-rate-limit-{rules}']
-    client_state = res.headers[f'x-rate-limit-{rules}-state']
-    headers = {'X-Rate-Limit-Policy': policy, 'X-Rate-Limit-Rules': rules, f'X-Rate-Limit': client, f'X-Rate-Limit-State': client_state}
-    
-    # Check if currently rate limited
-    try:
-        retry = res.headers['retry-after']
-        headers['Retry-After'] = retry
-    except:
-        headers['Retry-After'] = 'OK'
-    return JSONResponse(content=res.json(), headers=headers)

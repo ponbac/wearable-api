@@ -3,6 +3,7 @@ from firebase_admin import credentials
 from firebase_admin import firestore
 
 from passlib.context import CryptContext
+from datetime import datetime, timedelta
 import json
 
 from .schemas.schemas import Snapshot, User, UserInDB
@@ -104,4 +105,4 @@ def authenticate_user(username: str, password: str):
 def set_access_token(username: str, access_token: str, refresh_token: str):
     users_ref = firebase_db.collection('users')
     users_ref.document(username.lower()).update(
-        {'access_token': access_token, 'refresh_token': refresh_token})
+        {'access_token': access_token, 'refresh_token': refresh_token, 'expires': datetime.now() + timedelta(days=27, hours=23)})

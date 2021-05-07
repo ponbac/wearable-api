@@ -25,6 +25,7 @@ class UserInDB(User):
     poesessid: str
     access_token: Optional[str] = None
     refresh_token: Optional[str] = None
+    expires: Optional[datetime] = None
 
 
 class Snapshot(BaseModel):

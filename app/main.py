@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
 import app.db as db
 from app.dependencies import get_current_user
 from app.utils import is_not_empty, write_to_file
-from app.routers import ninja, stash, poe_auth
+from app.routers import ninja, stash, poe_auth, poe_api
 from app.schemas.schemas import Token, TokenData, User, UserInDB
 from .config import settings
 
@@ -20,6 +20,7 @@ from .config import settings
 
 app = FastAPI()
 app.include_router(poe_auth.router) # poe oauth2-router
+app.include_router(poe_api.router) # poe official api-router
 app.include_router(ninja.router) # poe.ninja-router
 app.include_router(stash.router) # stash-router
 
