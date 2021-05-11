@@ -23,6 +23,9 @@ class UserInDB(User):
     hashed_password: str
     accountname: str
     poesessid: str
+    access_token: Optional[str] = None
+    refresh_token: Optional[str] = None
+    expires: Optional[datetime] = None
 
 
 class Snapshot(BaseModel):
