@@ -13,7 +13,7 @@ from ..schemas.schemas import UserInDB
 
 # DEPENDENCY - Check that the access token is valid before making a request
 def valid_user(current_user: UserInDB = Depends(get_current_user)):
-    if datetime.now(pytz.utc) < current_user.expires:
+    if current_user.expires is not None and datetime.now(pytz.utc) < current_user.expires:
         return current_user
     else:
         raise HTTPException(
