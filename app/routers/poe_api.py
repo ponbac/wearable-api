@@ -103,6 +103,7 @@ async def get_stash(current_user: UserInDB = Depends(valid_user), league: str = 
     return JSONResponse(content=res.json(), headers=headers, status_code=res.status_code)
 
 
+# Backman app does not have access to this, need service:leagues :(
 # https://www.pathofexile.com/developer/docs/reference#leagues
 @ router.get("/league/ladder")
 async def get_league(league: str = 'Ultimatum'):
