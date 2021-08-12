@@ -31,11 +31,16 @@ router = APIRouter(
 API_URL = 'https://api.pathofexile.com'
 
 
-def get_api_data(query: str, current_user: UserInDB):
+def get_api_data(query: str, current_user: Optional[UserInDB] = None):
     with Session() as s:
-        s.headers.update({'User-Agent': f'OAuth {settings.POE_CLIENT_ID}/1.0.0 (contact: ponbac@student.chalmers.se)',
-                          'Authorization': f'Bearer {current_user.access_token}'})
-        return s.get(f'{API_URL}{query}')
+        if current_user:
+            s.headers.update({'User-Agent': f'OAuth {settings.POE_CLIENT_ID}/1.0.0 (contact: ponbac@student.chalmers.se)',
+                            'Authorization': f'Bearer {current_user.access_token}'})
+        else:
+            s.headers.update({'User-Agent': f'OAuth {settings.POE_CLIENT_ID}/1.0.0 (contact: ponbac@student.chalmers.se)'})
+        data = s.get(f'{API_URL}{query}')
+
+        return data
 
 # Set rate-limiting headers
 
@@ -68,7 +73,7 @@ async def get_profile(current_user: UserInDB = Depends(valid_user)):
     res = get_api_data('/profile', current_user)
     headers = set_headers(res)
 
-    return JSONResponse(content=res.json(), headers=headers)
+    return JSONResponse(content=res.json(), headers=headers, status_code=res.status_code)
 
 
 # https://www.pathofexile.com/developer/docs/reference#characters
@@ -79,7 +84,7 @@ async def get_character(current_user: UserInDB = Depends(valid_user), name: Opti
     res = get_api_data(query, current_user)
     headers = set_headers(res)
 
-    return JSONResponse(content=res.json(), headers=headers)
+    return JSONResponse(content=res.json(), headers=headers, status_code=res.status_code)
 
 
 # https://www.pathofexile.com/developer/docs/reference#stashes
@@ -95,4 +100,15 @@ async def get_stash(current_user: UserInDB = Depends(valid_user), league: str = 
     res = get_api_data(query, current_user)
     headers = set_headers(res)
 
-    return JSONResponse(content=res.json(), headers=headers)
+    return JSONResponse(content=res.json(), headers=headers, status_code=res.status_code)
+
+
+# https://www.pathofexile.com/developer/docs/reference#leagues
+@ router.get("/league/ladder")
+async def get_league(league: str = 'Ultimatum'):
+    query = f'/league/{league}/ladder'
+
+    res = get_api_data(query)
+    headers = set_headers(res)
+
+    return JSONResponse(content=res.json(), headers=headers, status_code=res.status_code)
