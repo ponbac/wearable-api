@@ -3,7 +3,7 @@ from pydantic import BaseSettings
 
 class Settings(BaseSettings):
     # Discord
-    SECRET_KEY: str
+    DISCORD_TOKEN: str
 
     class Config:
         case_sensitive = True
