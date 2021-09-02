@@ -1,5 +1,4 @@
 from datetime import datetime
-import pytz
 from typing import Optional
 from requests.sessions import Session
 
@@ -8,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Form, Response
 
 from ..config import settings
 from ..schemas.schemas import UserInDB
+from ..discord_bot.client import DiscordClient
 
 
 router = APIRouter(
@@ -16,8 +16,6 @@ router = APIRouter(
     dependencies=[],
     responses={404: {"description": "Not found"}},
 )
-
-API_URL = 'https://api.pathofexile.com'
 
 
 @ router.get("/test")

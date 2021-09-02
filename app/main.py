@@ -1,4 +1,5 @@
 import os
+import threading
 from datetime import datetime, timedelta
 from typing import Optional
 from requests import get
@@ -11,6 +12,7 @@ from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
 from app.routers import discord_router
 from app.schemas.schemas import Token, TokenData, User, UserInDB
 from .config import settings
+from app.discord_bot.client import DiscordClient
 
 
 app = FastAPI()
