@@ -5,9 +5,8 @@ from requests import get
 from fastapi.responses import JSONResponse
 from fastapi import APIRouter, Depends, HTTPException, status, Form, Response
 
-from ..config import settings
+from ...config import settings
 from ..schemas.schemas import UserInDB
-from ..discord_bot.client import DiscordClient
 
 
 router = APIRouter(
@@ -22,7 +21,7 @@ AUTH_HEADERS = {'Authorization': f'Bot {settings.DISCORD_TOKEN}', 'User-Agent': 
 
 
 @ router.get("/test")
-async def test(channel_id: str = '287210077423927296'):
-    response = get(f'{BASE_URL}/channels/{channel_id}', headers=AUTH_HEADERS)
+async def test(id: str = '107771609095376896'):
+    response = get(f'{BASE_URL}/guilds/{id}/members?limit=500', headers=AUTH_HEADERS)
 
     return JSONResponse(content=response.json())
