@@ -6,5 +6,4 @@ python-multipart
 aiofiles
 python-dotenv
 discord.py
-asyncio
-nest_asyncio
+requests_oauthlib

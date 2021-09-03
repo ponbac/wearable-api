@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from requests.sessions import Session
+from requests import get
 
 from fastapi.responses import JSONResponse
 from fastapi import APIRouter, Depends, HTTPException, status, Form, Response
@@ -17,7 +17,12 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
+BASE_URL = f'https://discord.com/api/v{settings.DISCORD_API_VERSION}'
+AUTH_HEADERS = {'Authorization': f'Bot {settings.DISCORD_TOKEN}', 'User-Agent': 'DiscordBot (https://www.wear.backman.app, 0.0.1)'}
+
 
 @ router.get("/test")
-async def test(id: str = 'Donkadink'):
-    return JSONResponse(content='{}')
+async def test(channel_id: str = '287210077423927296'):
+    response = get(f'{BASE_URL}/channels/{channel_id}', headers=AUTH_HEADERS)
+
+    return JSONResponse(content=response.json())
