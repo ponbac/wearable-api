@@ -5,7 +5,7 @@ from requests import get
 from fastapi.responses import JSONResponse
 from fastapi import APIRouter, Depends, HTTPException, status, Form, Response
 
-from ...config import settings
+from ..config import settings
 from ..schemas.schemas import UserInDB
 
 
