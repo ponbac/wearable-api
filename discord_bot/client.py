@@ -3,9 +3,6 @@ from deta import Deta
 from config import settings
 
 class DiscordClient(discord.Client):
-    deta = Deta(settings.DETA_PROJECT_KEY)
-    db = deta.Base('members')
-
     async def on_ready(self):
         print(f'Logged in as {self.user}')
 
@@ -14,14 +11,18 @@ class DiscordClient(discord.Client):
         #print(f'Before: {before}\nAfter: {after}')
         
         if after.channel is None:
+            deta = Deta(settings.DETA_PROJECT_KEY)
+            db = deta.Base('members')
             print(f'{member.nick} left the voice channel!')
-            user = next(DiscordClient.db.fetch({"nick": member.nick}))[0]
-            DiscordClient.db.delete(user['key'])
+            user = next(db.fetch({"nick": member.nick}))[0]
+            db.delete(user['key'])
         elif before.channel == after.channel or before.channel is not None:
             print(f'{member.nick} state changed')
         else:
+            deta = Deta(settings.DETA_PROJECT_KEY)
+            db = deta.Base('members')
             print(f'{member.nick} joined {after.channel} avatar={str(member.avatar_url)}')
-            DiscordClient.db.insert({'nick': member.nick, 'avatar': str(member.avatar_url)})
+            db.insert({'nick': member.nick, 'avatar': str(member.avatar_url)})
         
 # total_members = 0
 #         for guild in self.guilds:
