@@ -22,7 +22,7 @@ class DiscordClient(discord.Client):
             deta = Deta(settings.DETA_PROJECT_KEY)
             db = deta.Base('members')
             print(f'{member.nick} joined {after.channel} avatar={str(member.avatar_url)}')
-            db.insert({'nick': member.nick, 'avatar': str(member.avatar_url)})
+            db.insert({'nick': member.nick, 'avatar': str(member.avatar_url_as(size=256))})
         
 # total_members = 0
 #         for guild in self.guilds:
