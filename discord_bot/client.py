@@ -18,7 +18,7 @@ class DiscordClient(discord.Client):
         if after.channel is None:
             db = self.create_db_connection()
             print(f'{member.nick} left the voice channel!')
-            db.delete(member.id)
+            db.delete(str(member.id))
         else:
             db = self.create_db_connection()
             print(
