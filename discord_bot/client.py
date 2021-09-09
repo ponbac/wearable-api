@@ -21,6 +21,10 @@ class DiscordClient(discord.Client):
             db.delete(str(member.id))
         else:
             db = self.create_db_connection()
+            if member.nick is None:
+                print('NO NICK!')
+                member.nick = member.name.split('#')[0]
+                print(member.nick)
             print(
                 f'{member.nick} updated, in channel {after.channel} avatar={str(member.avatar_url)}')
             db_object = {'nick': member.nick, 'avatar': str(
