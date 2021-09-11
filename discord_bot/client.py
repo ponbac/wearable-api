@@ -12,7 +12,7 @@ class DiscordClient(discord.Client):
         print(f'Logged in as {self.user}')
 
     async def on_voice_state_update(self, member, before, after):
-        #print('---------------------------------------------------')
+        # print('---------------------------------------------------')
         #print(f'Member:  {member}\nBefore: {before}\nAfter: {after}')
 
         if after.channel is None:
@@ -28,8 +28,8 @@ class DiscordClient(discord.Client):
             print(
                 f'{member.nick} updated, in channel {after.channel} avatar={str(member.avatar_url)}')
             db_object = {'nick': member.nick, 'avatar': str(
-                member.avatar_url_as(size=256)), 'channelId': str(after.channel.id), 'channelName': str(after.channel.name), 'isStreaming': bool(after.self_stream)}
-            #print(db_object)
+                member.avatar_url_as(size=256)), 'channelId': str(after.channel.id), 'channelName': str(after.channel.name), 'isStreaming': bool(after.self_stream), 'isMuted': bool(after.self_mute)}
+            # print(db_object)
             db.put(db_object, str(member.id))
 
 # total_members = 0
